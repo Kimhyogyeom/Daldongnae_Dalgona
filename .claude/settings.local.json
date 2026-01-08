@@ -1,7 +1,9 @@
 {
   "permissions": {
     "allow": [
-      "Bash(git remote add:*)"
+      "Bash(git remote add:*)",
+      "Bash(tree:*)",
+      "Bash(dir \"c:\\\\Unity_Project\\\\Daldongnae_Dalgona\\\\Assets\" /s /b /ad)"
     ]
   }
 }

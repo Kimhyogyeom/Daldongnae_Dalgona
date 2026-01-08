@@ -120,6 +120,12 @@ public class Step2VideoController : MonoBehaviour
             _isPlaying = false;
             _currentPlayingCount = Mathf.Max(0, _currentPlayingCount - 1);
         }
+
+        // GameManager에 비디오 종료 알림 (자동 전환 타이머 시작)
+        if (GameManager.Instance != null)
+        {
+            GameManager.Instance.OnStep2VideoFinished();
+        }
     }
 
     /// <summary>

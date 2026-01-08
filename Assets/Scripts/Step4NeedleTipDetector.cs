@@ -2,57 +2,58 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
+/// <summary>
+/// Step4 달고나 게임 - 바늘 끝 감지
+/// - 포인트 홀드 감지 (3초)
+/// - 제한 시간 타이머
+/// - 성공/실패 시 GameManager에 알림
+/// </summary>
 public class Step4NeedleTipDetector : MonoBehaviour
 {
     [Header("패널 선택 컨트롤러")]
     [SerializeField] private Step3SelectButtonController _step3SelectButtonController;
-    // Step3에서 선택된 인덱스를 가져오기 위한 컨트롤러
 
     [Header("각 패널별 Circle 포인트 배열들")]
-    [SerializeField] private Collider2D[] _circlePointsSet0; // selectIndex 0
-    [SerializeField] private Collider2D[] _circlePointsSet1; // selectIndex 1
-    [SerializeField] private Collider2D[] _circlePointsSet2; // selectIndex 2
-    [SerializeField] private Collider2D[] _circlePointsSet3; // selectIndex 3
+    [SerializeField] private Collider2D[] _circlePointsSet0;
+    [SerializeField] private Collider2D[] _circlePointsSet1;
+    [SerializeField] private Collider2D[] _circlePointsSet2;
+    [SerializeField] private Collider2D[] _circlePointsSet3;
 
     [Header("홀드(3초) 관련 설정")]
-    [SerializeField] private float _holdTime = 3f;           // 한 포인트를 유지해야 하는 시간
-    [SerializeField] private Color _completeColor = Color.green; // 완료 시 변경할 색상
+    [SerializeField] private float _holdTime = 3f;
+    [SerializeField] private Color _completeColor = Color.green;
 
-    [Header("포인트 홀드 진행도 (버튼 Filled Image)")]
-    [SerializeField] private Image _fillImage;               // 현재 홀드 진행도 표시용 이미지 (Type: Filled)
+    [Header("포인트 홀드 진행도 (슬라이더)")]
+    [SerializeField] private Slider _holdSlider;
 
     [Header("게임 제한 시간 설정")]
-    [SerializeField] private float _timeLimit = 60f;         // 전체 제한 시간 (초)
-    [SerializeField] private Image _timeFillImage;           // 제한 시간 게이지용 이미지 (Type: Filled)
+    [SerializeField] private float _timeLimit = 60f;
+    [SerializeField] private TimerRotation _timerRotation;
 
     [Header("타임스케일 조건값")]
     [Range(1f, 10f)]
-    [SerializeField] private float timer = 1f;               // Time.timeScale 값
+    [SerializeField] private float timer = 1f;
 
-    [Header("엔딩 관련 오브젝트")]
-    [SerializeField] private GameObject _endingObject;       // 엔딩 전체 패널
-    [SerializeField] private GameObject[] _endingMessageObjects; // [0] 성공 메시지, [1] 실패 메시지 등
+    [Header("게임 패널 (Step3 선택에 따라 열리는 패널)")]
+    [SerializeField] private GameObject[] _gamePanels;
+
+    [Header("옵션")]
+    [SerializeField] private bool _autoStartTimerOnEnable = true;
 
     // ─────────────────────────────────────────────────────
     // 내부 상태
     // ─────────────────────────────────────────────────────
 
-    private Collider2D _currentCircle;                       // 현재 홀드 중인 Circle
-    private SpriteRenderer _currentRenderer;                 // 현재 Circle의 SpriteRenderer
-    private float _holdTimer = 0f;                           // 현재 포인트를 유지한 시간
+    private Collider2D _currentCircle;
+    private SpriteRenderer _currentRenderer;
+    private float _holdTimer = 0f;
 
-    // 이미 완료된 Circle들
     private HashSet<Collider2D> _completedCircles = new HashSet<Collider2D>();
 
-    // 제한 시간 타이머
-    private float _timeElapsed = 0f;                         // 경과 시간
-    private bool _isTimerRunning = false;                    // 타이머 동작 여부
-    private bool _isTimerFinished = false;                   // 성공/실패로 게임이 끝났는지 여부
+    private float _timeElapsed = 0f;
+    private bool _isTimerRunning = false;
+    private bool _isTimerFinished = false;
 
-    // 자동 시작을 쓸 거면 true, 수동으로 시작할 거면 false
-    [SerializeField] private bool _autoStartTimerOnEnable = true;
-
-    // 리셋 시 색을 되돌리기 위한 원본 색상 저장용
     private Dictionary<Collider2D, Color> _originalColors = new Dictionary<Collider2D, Color>();
 
     private void OnEnable()
@@ -61,34 +62,18 @@ public class Step4NeedleTipDetector : MonoBehaviour
         {
             StartLimitTimer();
         }
-
-        // 엔딩 패널 및 메시지는 비활성화 상태로 시작
-        if (_endingObject != null)
-            _endingObject.SetActive(false);
-
-        if (_endingMessageObjects != null)
-        {
-            for (int i = 0; i < _endingMessageObjects.Length; i++)
-            {
-                if (_endingMessageObjects[i] != null)
-                    _endingMessageObjects[i].SetActive(false);
-            }
-        }
     }
 
     private void Awake()
     {
-        // 전체 게임 타임스케일 설정
         Time.timeScale = timer;
 
-        // 진행도 이미지 초기화
-        if (_fillImage != null)
-            _fillImage.fillAmount = 0f;
+        if (_holdSlider != null)
+            _holdSlider.value = 0f;
 
-        if (_timeFillImage != null)
-            _timeFillImage.fillAmount = 0f;
+        if (_timerRotation != null)
+            _timerRotation.SetDuration(_timeLimit);
 
-        // 모든 Circle의 초기 색상 캐싱
         CacheOriginalColors();
     }
 
@@ -97,28 +82,30 @@ public class Step4NeedleTipDetector : MonoBehaviour
         // ───── 1) 제한 시간 타이머 업데이트 ─────
         if (_isTimerRunning && !_isTimerFinished)
         {
-            _timeElapsed += Time.deltaTime;
-
-            if (_timeFillImage != null)
+            if (_timerRotation != null)
             {
-                _timeFillImage.fillAmount = Mathf.Clamp01(_timeElapsed / _timeLimit);
+                _timeElapsed = _timerRotation.GetElapsedTime();
+            }
+            else
+            {
+                _timeElapsed += Time.deltaTime;
             }
 
             // 제한 시간 초과
-            if (_timeElapsed >= _timeLimit)
+            if (_timeElapsed >= _timeLimit || (_timerRotation != null && _timerRotation.IsCompleted()))
             {
                 _isTimerRunning = false;
                 _isTimerFinished = true;
 
-                // 현재 홀드 중인 것도 리셋
-                ResetCurrentHold();
+                if (_timerRotation != null)
+                    _timerRotation.Stop();
 
+                ResetCurrentHold();
                 FailCall();
                 Debug.Log("제한시간 내에 실패!");
             }
         }
 
-        // 타이머가 끝났으면 더 이상 포인트 채우기 로직은 수행하지 않음
         if (_isTimerFinished || !_isTimerRunning)
             return;
 
@@ -127,26 +114,20 @@ public class Step4NeedleTipDetector : MonoBehaviour
         {
             _holdTimer += Time.deltaTime;
 
-            if (_fillImage != null)
+            if (_holdSlider != null)
             {
-                _fillImage.fillAmount = Mathf.Clamp01(_holdTimer / _holdTime);
+                _holdSlider.value = Mathf.Clamp01(_holdTimer / _holdTime);
             }
 
-            // 홀드 시간이 기준 이상이면 완료 처리
             if (_holdTimer >= _holdTime)
             {
-                // 3초 홀드 완료 → 색 변경 + 완료 목록 추가
                 if (_currentRenderer != null)
                 {
                     _currentRenderer.color = _completeColor;
                 }
 
                 _completedCircles.Add(_currentCircle);
-
-                // 현재 선택된 배열 기준으로 모두 완료됐는지 체크
                 CheckAllCompleted();
-
-                // 현재 홀드 상태 리셋
                 ResetCurrentHold();
             }
         }
@@ -156,15 +137,12 @@ public class Step4NeedleTipDetector : MonoBehaviour
     {
         Debug.Log($"[Step4Tip] OnTriggerEnter2D with {other.name}");
 
-        // 타이머가 안 돌거나 이미 끝났으면 무시
         if (!_isTimerRunning || _isTimerFinished)
             return;
 
-        // 이미 완료된 포인트면 무시
         if (_completedCircles.Contains(other))
             return;
 
-        // 현재 선택된 배열에 속한 포인트인지 확인
         if (!IsTargetCircle(other))
             return;
 
@@ -172,8 +150,8 @@ public class Step4NeedleTipDetector : MonoBehaviour
         _currentRenderer = other.GetComponent<SpriteRenderer>();
         _holdTimer = 0f;
 
-        if (_fillImage != null)
-            _fillImage.fillAmount = 0f;
+        if (_holdSlider != null)
+            _holdSlider.value = 0f;
     }
 
     private void OnTriggerExit2D(Collider2D other)
@@ -184,45 +162,34 @@ public class Step4NeedleTipDetector : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// 현재 홀드(3초) 상태 리셋
-    /// </summary>
     private void ResetCurrentHold()
     {
         _currentCircle = null;
         _currentRenderer = null;
         _holdTimer = 0f;
 
-        if (_fillImage != null)
-            _fillImage.fillAmount = 0f;
+        if (_holdSlider != null)
+            _holdSlider.value = 0f;
     }
 
-    /// <summary>
-    /// 외부에서 "게임 시작" 시 호출해주면 됨
-    /// - 타이머 및 내부 상태 초기화
-    /// - 완료 포인트 목록 초기화
-    /// </summary>
     public void StartLimitTimer()
     {
-        // 전체 상태 초기화
         _timeElapsed = 0f;
         _isTimerRunning = true;
         _isTimerFinished = false;
 
-        if (_timeFillImage != null)
-            _timeFillImage.fillAmount = 0f;
+        if (_timerRotation != null)
+        {
+            _timerRotation.SetDuration(_timeLimit);
+            _timerRotation.Play();
+        }
 
         ResetCurrentHold();
-
-        // 게임 시작 시 완료 정보 초기화
         _completedCircles.Clear();
 
         Debug.Log("[Step4Tip] 제한 시간 타이머 시작");
     }
 
-    /// <summary>
-    /// 현재 선택된 패널에 해당하는 Collider 배열 하나 가져오기
-    /// </summary>
     private Collider2D[] GetActiveCircleArray()
     {
         if (_step3SelectButtonController == null)
@@ -231,14 +198,12 @@ public class Step4NeedleTipDetector : MonoBehaviour
         }
 
         int idx = _step3SelectButtonController._selectIndex;
-
         int arrayIndex;
-        // 0~3을 직접 쓰는 경우
+
         if (idx >= 0 && idx <= 3)
         {
             arrayIndex = idx;
         }
-        // 1~4를 쓰는 경우 (1→0, 2→1, 3→2, 4→3) 같은 상황도 방어
         else if (idx >= 1 && idx <= 4)
         {
             arrayIndex = idx - 1;
@@ -258,10 +223,6 @@ public class Step4NeedleTipDetector : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// 현재 선택된 배열에 속한 Circle인지 확인
-    /// + 이미 완료된 포인트는 false
-    /// </summary>
     private bool IsTargetCircle(Collider2D col)
     {
         if (_completedCircles.Contains(col))
@@ -279,9 +240,6 @@ public class Step4NeedleTipDetector : MonoBehaviour
         return false;
     }
 
-    /// <summary>
-    /// 현재 선택된 배열의 모든 포인트가 완료됐는지 확인
-    /// </summary>
     private void CheckAllCompleted()
     {
         Collider2D[] activeArray = GetActiveCircleArray();
@@ -301,47 +259,90 @@ public class Step4NeedleTipDetector : MonoBehaviour
 
         if (completed == total)
         {
-            // 제한 시간 안에 모두 완료
             if (_isTimerRunning && !_isTimerFinished && _timeElapsed <= _timeLimit)
             {
                 SuccessCall();
                 Debug.Log("제한시간 내에 성공!");
             }
 
-            // 타이머 종료
             _isTimerRunning = false;
             _isTimerFinished = true;
+
+            if (_timerRotation != null)
+                _timerRotation.Stop();
         }
     }
 
+    private int GetCurrentSelectIndex()
+    {
+        if (_step3SelectButtonController == null)
+            return 0;
+
+        int idx = _step3SelectButtonController._selectIndex;
+
+        if (idx >= 0 && idx <= 3)
+            return idx;
+        else if (idx >= 1 && idx <= 4)
+            return idx - 1;
+        else
+            return 0;
+    }
+
     /// <summary>
-    /// 성공 시 호출되는 처리 (엔딩 패널 + 성공 메시지 활성화)
+    /// 성공 시 처리 - GameManager에 알림
     /// </summary>
     private void SuccessCall()
     {
-        if (_endingObject != null)
-            _endingObject.SetActive(true);
+        int idx = GetCurrentSelectIndex();
 
-        if (_endingMessageObjects != null && _endingMessageObjects.Length > 0 && _endingMessageObjects[0] != null)
-            _endingMessageObjects[0].SetActive(true);
+        // 게임 패널 닫기
+        CloseGamePanel(idx);
+
+        // GameManager에 성공 알림
+        if (GameManager.Instance != null)
+        {
+            GameManager.Instance.OnGameSuccess(idx);
+        }
+        else
+        {
+            Debug.LogWarning("[Step4Tip] GameManager.Instance가 없습니다!");
+        }
+
+        Debug.Log($"[Step4Tip] 성공! 인덱스 {idx}");
     }
 
     /// <summary>
-    /// 실패 시 호출되는 처리 (엔딩 패널 + 실패 메시지 활성화)
+    /// 실패 시 처리 - GameManager에 알림
     /// </summary>
     private void FailCall()
     {
-        if (_endingObject != null)
-            _endingObject.SetActive(true);
+        int idx = GetCurrentSelectIndex();
 
-        if (_endingMessageObjects != null && _endingMessageObjects.Length > 1 && _endingMessageObjects[1] != null)
-            _endingMessageObjects[1].SetActive(true);
+        // 게임 패널 닫기
+        CloseGamePanel(idx);
+
+        // GameManager에 실패 알림
+        if (GameManager.Instance != null)
+        {
+            GameManager.Instance.OnGameFail(idx);
+        }
+        else
+        {
+            Debug.LogWarning("[Step4Tip] GameManager.Instance가 없습니다!");
+        }
+
+        Debug.Log($"[Step4Tip] 실패! 인덱스 {idx}");
     }
 
-    /// <summary>
-    /// 모든 Circle들의 초기 색상을 캐싱
-    /// - 리셋 시 색상을 원래대로 돌리기 위함
-    /// </summary>
+    private void CloseGamePanel(int index)
+    {
+        if (_gamePanels != null && index < _gamePanels.Length && _gamePanels[index] != null)
+        {
+            _gamePanels[index].SetActive(false);
+            Debug.Log($"[Step4Tip] 게임 패널 닫기: index={index}");
+        }
+    }
+
     private void CacheOriginalColors()
     {
         CacheFromArray(_circlePointsSet0);
@@ -350,9 +351,6 @@ public class Step4NeedleTipDetector : MonoBehaviour
         CacheFromArray(_circlePointsSet3);
     }
 
-    /// <summary>
-    /// 주어진 배열에 포함된 Collider2D에서 SpriteRenderer 색상 저장
-    /// </summary>
     private void CacheFromArray(Collider2D[] array)
     {
         if (array == null)
@@ -376,23 +374,18 @@ public class Step4NeedleTipDetector : MonoBehaviour
     }
 
     /// <summary>
-    /// 외부에서 호출할 수 있는 전체 리셋 함수
-    /// - 타이머, 진행도, 완료 상태, 색상, 엔딩 UI 등을 초기 상태로 되돌림
+    /// 리셋 (GameManager 또는 외부에서 호출)
     /// </summary>
     public void ResetCall()
     {
-        // 타이머 관련 초기화
         _timeElapsed = 0f;
         _isTimerRunning = false;
         _isTimerFinished = false;
 
-        if (_timeFillImage != null)
-            _timeFillImage.fillAmount = 0f;
+        if (_timerRotation != null)
+            _timerRotation.ResetCall();
 
-        // 현재 홀드 상태 초기화
         ResetCurrentHold();
-
-        // 완료된 포인트 목록 초기화
         _completedCircles.Clear();
 
         // Circle 색상 원래대로 복구
@@ -406,19 +399,6 @@ public class Step4NeedleTipDetector : MonoBehaviour
             if (sr != null)
             {
                 sr.color = pair.Value;
-            }
-        }
-
-        // 엔딩 패널 및 메시지 숨기기
-        if (_endingObject != null)
-            _endingObject.SetActive(false);
-
-        if (_endingMessageObjects != null)
-        {
-            for (int i = 0; i < _endingMessageObjects.Length; i++)
-            {
-                if (_endingMessageObjects[i] != null)
-                    _endingMessageObjects[i].SetActive(false);
             }
         }
     }

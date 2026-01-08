@@ -28,6 +28,13 @@ public class ResetController : MonoBehaviour
 
     private void OnRessetCall()
     {
+        // 결과 화면 표시 중이면 수동 리셋 무시 (타이머로만 리셋)
+        if (GameManager.Instance != null && GameManager.Instance.IsShowingResult)
+        {
+            Debug.Log("[ResetController] 결과 화면 중이라 수동 리셋 무시");
+            return;
+        }
+
         // Step 1 리셋
         _step1ButtonController.ResetCall();
 

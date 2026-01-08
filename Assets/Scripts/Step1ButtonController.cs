@@ -23,6 +23,13 @@ public class Step1ButtonController : MonoBehaviour
     /// </summary>
     private void OnStep1StartButton()
     {
+        // 결과 화면 표시 중이면 클릭 무시
+        if (GameManager.Instance != null && GameManager.Instance.IsShowingResult)
+        {
+            Debug.Log("[Step1] 결과 화면 중이라 버튼 클릭 무시");
+            return;
+        }
+
         if (_step1Panel != null && _step2Panel != null)
         {
             _step1Panel.SetActive(false);

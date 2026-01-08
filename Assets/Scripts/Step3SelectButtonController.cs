@@ -30,10 +30,19 @@ public class Step3SelectButtonController : MonoBehaviour
     }
 
     /// <summary>
+    /// 결과 화면 중인지 확인
+    /// </summary>
+    private bool IsResultShowing()
+    {
+        return GameManager.Instance != null && GameManager.Instance.IsShowingResult;
+    }
+
+    /// <summary>
     /// 0번 선택 버튼 클릭 시
     /// </summary>
     private void OnStep3SelectButton0()
     {
+        if (IsResultShowing()) return;
         _selectIndex = 0;
         SelectObjectActiveCtrl(_selectImageObject[0]);
     }
@@ -43,6 +52,7 @@ public class Step3SelectButtonController : MonoBehaviour
     /// </summary>
     private void OnStep3SelectButton1()
     {
+        if (IsResultShowing()) return;
         _selectIndex = 1;
         SelectObjectActiveCtrl(_selectImageObject[1]);
     }
@@ -52,6 +62,7 @@ public class Step3SelectButtonController : MonoBehaviour
     /// </summary>
     private void OnStep3SelectButton2()
     {
+        if (IsResultShowing()) return;
         _selectIndex = 2;
         SelectObjectActiveCtrl(_selectImageObject[2]);
     }
@@ -61,6 +72,7 @@ public class Step3SelectButtonController : MonoBehaviour
     /// </summary>
     private void OnStep3SelectButton3()
     {
+        if (IsResultShowing()) return;
         _selectIndex = 3;
         SelectObjectActiveCtrl(_selectImageObject[3]);
     }

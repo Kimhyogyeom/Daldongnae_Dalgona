@@ -14,6 +14,7 @@ public class Step4NeedleDrag : MonoBehaviour, IPointerDownHandler, IDragHandler,
     private Vector3 _offset;          // 드래그 시작 시 오브젝트 위치 - 포인터 위치
 
     private Vector3 _initialPosition; // 초기 위치 (리셋용)
+    private bool _isLocked = false;   // 드래그 잠금 여부
 
     private void Awake()
     {
@@ -32,6 +33,7 @@ public class Step4NeedleDrag : MonoBehaviour, IPointerDownHandler, IDragHandler,
     public void OnPointerDown(PointerEventData eventData)
     {
         if (_isDragging) return;
+        if (_isLocked) return;  // 잠금 상태면 드래그 불가
 
         _isDragging = true;
         _pointerId = eventData.pointerId;
@@ -139,5 +141,28 @@ public class Step4NeedleDrag : MonoBehaviour, IPointerDownHandler, IDragHandler,
     public void ResetCall()
     {
         ResetToInitialPosition();
+        _isLocked = false;  // 리셋 시 잠금 해제
+    }
+
+    /// <summary>
+    /// 드래그 잠금 (결과 패널 표시 중)
+    /// </summary>
+    public void Lock()
+    {
+        _isLocked = true;
+        // 드래그 중이면 즉시 해제하고 초기 위치로
+        if (_isDragging)
+        {
+            _isDragging = false;
+            ResetToInitialPosition();
+        }
+    }
+
+    /// <summary>
+    /// 드래그 잠금 해제
+    /// </summary>
+    public void Unlock()
+    {
+        _isLocked = false;
     }
 }

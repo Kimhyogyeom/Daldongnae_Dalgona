@@ -24,6 +24,20 @@ public class Step2ButtonController : MonoBehaviour
     /// </summary>
     private void OnStep1StartButton()
     {
+        // 결과 화면 표시 중이면 클릭 무시
+        if (GameManager.Instance != null && GameManager.Instance.IsShowingResult)
+        {
+            Debug.Log("[Step2] 결과 화면 중이라 버튼 클릭 무시");
+            return;
+        }
+
+        // Step2 → Step3 자동 전환 대기 중이면 클릭 무시 (타이머로만 전환)
+        if (GameManager.Instance != null && GameManager.Instance.IsWaitingForStep2ToStep3)
+        {
+            Debug.Log("[Step2] 자동 전환 대기 중이라 버튼 클릭 무시");
+            return;
+        }
+
         if (_step2Panel != null && _step3Panel != null)
         {
             _step2Panel.SetActive(false);
