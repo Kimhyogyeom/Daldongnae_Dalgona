@@ -3,6 +3,9 @@ using UnityEngine.UI;
 
 public class Step3ButtonController : MonoBehaviour
 {
+    [Header("GameManager 참조")]
+    [SerializeField] private GameManager _gameManager;
+
     [Header("패널 오브젝트들")]
     [SerializeField] private GameObject _step3Panel;   // STEP3 패널 (게임 준비 / 설명 화면)
     [SerializeField] private GameObject _step4Panel;   // STEP4 패널 (실제 게임 화면)
@@ -24,7 +27,7 @@ public class Step3ButtonController : MonoBehaviour
     private void OnGameStartButton()
     {
         // 결과 화면 표시 중이면 클릭 무시
-        if (GameManager.Instance != null && GameManager.Instance.IsShowingResult)
+        if (_gameManager != null && _gameManager.IsShowingResult)
         {
             Debug.Log("[Step3] 결과 화면 중이라 버튼 클릭 무시");
             return;

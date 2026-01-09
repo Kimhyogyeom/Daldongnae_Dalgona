@@ -9,6 +9,9 @@ using UnityEngine.Video;
 /// </summary>
 public class Step2VideoController : MonoBehaviour
 {
+    [Header("GameManager 참조")]
+    [SerializeField] private GameManager _gameManager;
+
     [Header("Video")]
     [SerializeField] private VideoPlayer _videoPlayer;    // 재생할 VideoPlayer
 
@@ -18,14 +21,8 @@ public class Step2VideoController : MonoBehaviour
     [Header("On Enable 자동 재생 여부")]
     [SerializeField] private bool _autoPlayOnEnable = true;
 
-    [Header("동시 재생 허용 최대 개수")]
-    [SerializeField] private int _maxConcurrentPlayers = 4;
-
     // 현재 이 컨트롤러가 영상 재생 중인지 여부
     private bool _isPlaying = false;
-
-    // 전체 씬에서 동시에 재생 중인 VideoPlayer 개수 (Step2VideoController 기준)
-    private static int _currentPlayingCount = 0;
 
     private void OnEnable()
     {
@@ -50,12 +47,8 @@ public class Step2VideoController : MonoBehaviour
             _videoPlayer.loopPointReached -= OnVideoFinished;
         }
 
-        // 재생 중이었다면, 전역 카운터 감소
-        if (_isPlaying)
-        {
-            _isPlaying = false;
-            _currentPlayingCount = Mathf.Max(0, _currentPlayingCount - 1);
-        }
+        // 재생 중이었다면 플래그 리셋
+        _isPlaying = false;
     }
 
     /// <summary>
@@ -63,7 +56,6 @@ public class Step2VideoController : MonoBehaviour
     /// </summary>
     private void InitializeAndPlay()
     {
-        print("111");
         // VideoPlayer가 유효한지 확인
         if (_videoPlayer == null)
             return;
@@ -85,18 +77,7 @@ public class Step2VideoController : MonoBehaviour
         _videoPlayer.loopPointReached -= OnVideoFinished;
         _videoPlayer.loopPointReached += OnVideoFinished;
 
-        // 동시 재생 개수 체크
-        if (!_isPlaying)
-        {
-            if (_currentPlayingCount >= _maxConcurrentPlayers)
-            {
-                Debug.LogWarning($"[Step2VideoController] 동시에 재생 가능한 최대 개수({_maxConcurrentPlayers})를 초과하여 재생하지 않습니다.");
-                return;
-            }
-
-            _currentPlayingCount++;
-            _isPlaying = true;
-        }
+        _isPlaying = true;
 
         // 영상 처음부터 다시 재생
         _videoPlayer.Stop();
@@ -115,16 +96,12 @@ public class Step2VideoController : MonoBehaviour
         }
 
         // 재생 종료 처리
-        if (_isPlaying)
-        {
-            _isPlaying = false;
-            _currentPlayingCount = Mathf.Max(0, _currentPlayingCount - 1);
-        }
+        _isPlaying = false;
 
         // GameManager에 비디오 종료 알림 (자동 전환 타이머 시작)
-        if (GameManager.Instance != null)
+        if (_gameManager != null)
         {
-            GameManager.Instance.OnStep2VideoFinished();
+            _gameManager.OnStep2VideoFinished();
         }
     }
 
@@ -136,11 +113,9 @@ public class Step2VideoController : MonoBehaviour
     public void ResetCall()
     {
         // 이 스크립트가 붙은 오브젝트(패널)가 비활성화 상태면 재생하지 않음
+        // (비활성화 상태에서는 OnEnable에서 다시 재생되므로 정상 동작)
         if (!gameObject.activeInHierarchy)
-        {
-            Debug.LogWarning("[Step2VideoController] GameObject가 비활성화 상태에서 ResetCall이 호출되었습니다. 재생하지 않습니다.");
             return;
-        }
 
         InitializeAndPlay();
     }

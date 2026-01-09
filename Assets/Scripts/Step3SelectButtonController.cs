@@ -3,6 +3,9 @@ using UnityEngine.UI;
 
 public class Step3SelectButtonController : MonoBehaviour
 {
+    [Header("GameManager 참조")]
+    [SerializeField] private GameManager _gameManager;
+
     [Header("Step4 포인트 배열 설정 컨트롤러")]
     [SerializeField] private Step4SetSelctPointArray _step4SetSelctPointArray;
     // Step4에서 사용할 포인트 배열의 부모를 설정해주는 스크립트
@@ -34,7 +37,7 @@ public class Step3SelectButtonController : MonoBehaviour
     /// </summary>
     private bool IsResultShowing()
     {
-        return GameManager.Instance != null && GameManager.Instance.IsShowingResult;
+        return _gameManager != null && _gameManager.IsShowingResult;
     }
 
     /// <summary>

@@ -13,7 +13,8 @@ using UnityEngine.UI;
 /// </summary>
 public class GameManager : MonoBehaviour
 {
-    public static GameManager Instance { get; private set; }
+    // 싱글톤 제거됨 - 각 캔버스에 독립적인 GameManager 인스턴스 사용
+    // 다른 스크립트에서는 Inspector에서 직접 연결하여 사용
 
     [Header("패널들")]
     [SerializeField] private GameObject _step1Panel;
@@ -94,17 +95,6 @@ public class GameManager : MonoBehaviour
 
     private void Awake()
     {
-        // 싱글톤 설정
-        if (Instance == null)
-        {
-            Instance = this;
-        }
-        else
-        {
-            Destroy(gameObject);
-            return;
-        }
-
         // 리셋 버튼 연결
         if (_resetButton != null)
         {

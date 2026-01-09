@@ -9,6 +9,9 @@ using UnityEngine;
 /// </summary>
 public class ShakeEffect : MonoBehaviour
 {
+    [Header("GameManager 참조")]
+    [SerializeField] private GameManager _gameManager;
+
     [Header("흔들림 설정")]
     [SerializeField] private float _shakeAmount = 1f;        // 흔들림 범위 (-1 ~ +1)
     [SerializeField] private float _speed = 5f;              // 흔들림 속도
@@ -56,7 +59,7 @@ public class ShakeEffect : MonoBehaviour
         // 결과 화면 감지 및 자동 멈춤/복귀
         if (_stopOnResult)
         {
-            bool isResultShowing = GameManager.Instance != null && GameManager.Instance.IsShowingResult;
+            bool isResultShowing = _gameManager != null && _gameManager.IsShowingResult;
 
             // 결과 화면 시작 → 멈춤
             if (isResultShowing && !_isPausedByResult)

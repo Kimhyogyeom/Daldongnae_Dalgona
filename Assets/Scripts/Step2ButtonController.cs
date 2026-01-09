@@ -3,6 +3,9 @@ using UnityEngine.UI;
 
 public class Step2ButtonController : MonoBehaviour
 {
+    [Header("GameManager 참조")]
+    [SerializeField] private GameManager _gameManager;
+
     [Header("패널 오브젝트들")]
     [SerializeField] private GameObject _step2Panel;   // STEP2 패널 (게임 설명 or 준비 화면)
     [SerializeField] private GameObject _step3Panel;   // STEP3 패널 (실제 게임 화면)
@@ -25,14 +28,14 @@ public class Step2ButtonController : MonoBehaviour
     private void OnStep1StartButton()
     {
         // 결과 화면 표시 중이면 클릭 무시
-        if (GameManager.Instance != null && GameManager.Instance.IsShowingResult)
+        if (_gameManager != null && _gameManager.IsShowingResult)
         {
             Debug.Log("[Step2] 결과 화면 중이라 버튼 클릭 무시");
             return;
         }
 
         // Step2 → Step3 자동 전환 대기 중이면 클릭 무시 (타이머로만 전환)
-        if (GameManager.Instance != null && GameManager.Instance.IsWaitingForStep2ToStep3)
+        if (_gameManager != null && _gameManager.IsWaitingForStep2ToStep3)
         {
             Debug.Log("[Step2] 자동 전환 대기 중이라 버튼 클릭 무시");
             return;

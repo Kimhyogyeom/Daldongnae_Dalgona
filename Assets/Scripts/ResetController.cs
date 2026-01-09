@@ -3,6 +3,9 @@ using UnityEngine.UI;
 
 public class ResetController : MonoBehaviour
 {
+    [Header("GameManager 참조")]
+    [SerializeField] private GameManager _gameManager;
+
     [Header("Step 1")]
     [SerializeField] private Step1ButtonController _step1ButtonController;
 
@@ -29,7 +32,7 @@ public class ResetController : MonoBehaviour
     private void OnRessetCall()
     {
         // 결과 화면 표시 중이면 수동 리셋 무시 (타이머로만 리셋)
-        if (GameManager.Instance != null && GameManager.Instance.IsShowingResult)
+        if (_gameManager != null && _gameManager.IsShowingResult)
         {
             Debug.Log("[ResetController] 결과 화면 중이라 수동 리셋 무시");
             return;

@@ -3,7 +3,8 @@
     "allow": [
       "Bash(git remote add:*)",
       "Bash(tree:*)",
-      "Bash(dir \"c:\\\\Unity_Project\\\\Daldongnae_Dalgona\\\\Assets\" /s /b /ad)"
+      "Bash(dir \"c:\\\\Unity_Project\\\\Daldongnae_Dalgona\\\\Assets\" /s /b /ad)",
+      "Bash(git push:*)"
     ]
   }
 }

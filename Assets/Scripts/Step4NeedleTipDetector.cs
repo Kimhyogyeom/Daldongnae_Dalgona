@@ -10,6 +10,9 @@ using UnityEngine.UI;
 /// </summary>
 public class Step4NeedleTipDetector : MonoBehaviour
 {
+    [Header("GameManager 참조")]
+    [SerializeField] private GameManager _gameManager;
+
     [Header("패널 선택 컨트롤러")]
     [SerializeField] private Step3SelectButtonController _step3SelectButtonController;
 
@@ -39,6 +42,9 @@ public class Step4NeedleTipDetector : MonoBehaviour
 
     [Header("옵션")]
     [SerializeField] private bool _autoStartTimerOnEnable = true;
+
+    [Header("드릴 파편 효과")]
+    [SerializeField] private DrillDebrisEffect _drillDebrisEffect;
 
     // ─────────────────────────────────────────────────────
     // 내부 상태
@@ -119,6 +125,12 @@ public class Step4NeedleTipDetector : MonoBehaviour
                 _holdSlider.value = Mathf.Clamp01(_holdTimer / _holdTime);
             }
 
+            // 드릴 파편 위치 업데이트
+            if (_drillDebrisEffect != null && _drillDebrisEffect.IsSpawning)
+            {
+                _drillDebrisEffect.UpdateSpawnPosition(transform.position);
+            }
+
             if (_holdTimer >= _holdTime)
             {
                 if (_currentRenderer != null)
@@ -152,6 +164,12 @@ public class Step4NeedleTipDetector : MonoBehaviour
 
         if (_holdSlider != null)
             _holdSlider.value = 0f;
+
+        // 드릴 파편 효과 시작
+        if (_drillDebrisEffect != null)
+        {
+            _drillDebrisEffect.StartSpawning(transform.position);
+        }
     }
 
     private void OnTriggerExit2D(Collider2D other)
@@ -170,6 +188,12 @@ public class Step4NeedleTipDetector : MonoBehaviour
 
         if (_holdSlider != null)
             _holdSlider.value = 0f;
+
+        // 드릴 파편 효과 중지
+        if (_drillDebrisEffect != null)
+        {
+            _drillDebrisEffect.StopSpawning();
+        }
     }
 
     public void StartLimitTimer()
@@ -299,13 +323,13 @@ public class Step4NeedleTipDetector : MonoBehaviour
         CloseGamePanel(idx);
 
         // GameManager에 성공 알림
-        if (GameManager.Instance != null)
+        if (_gameManager != null)
         {
-            GameManager.Instance.OnGameSuccess(idx);
+            _gameManager.OnGameSuccess(idx);
         }
         else
         {
-            Debug.LogWarning("[Step4Tip] GameManager.Instance가 없습니다!");
+            Debug.LogWarning("[Step4Tip] GameManager가 연결되지 않았습니다!");
         }
 
         Debug.Log($"[Step4Tip] 성공! 인덱스 {idx}");
@@ -322,13 +346,13 @@ public class Step4NeedleTipDetector : MonoBehaviour
         CloseGamePanel(idx);
 
         // GameManager에 실패 알림
-        if (GameManager.Instance != null)
+        if (_gameManager != null)
         {
-            GameManager.Instance.OnGameFail(idx);
+            _gameManager.OnGameFail(idx);
         }
         else
         {
-            Debug.LogWarning("[Step4Tip] GameManager.Instance가 없습니다!");
+            Debug.LogWarning("[Step4Tip] GameManager가 연결되지 않았습니다!");
         }
 
         Debug.Log($"[Step4Tip] 실패! 인덱스 {idx}");
